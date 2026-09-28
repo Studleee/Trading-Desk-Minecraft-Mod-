@@ -3,5 +3,7 @@
 	"block.tradingdesk.trading_desk": "Trading Desk",
 	"block.tradingdesk.chart_screen": "Chart Screen",
 	"block.tradingdesk.buy_button": "Buy Button",
-	"block.tradingdesk.sell_button": "Sell Button"
+	"block.tradingdesk.sell_button": "Sell Button",
+	"block.tradingdesk.green_vote_plate": "Green Vote Plate",
+	"block.tradingdesk.red_vote_plate": "Red Vote Plate"
 }

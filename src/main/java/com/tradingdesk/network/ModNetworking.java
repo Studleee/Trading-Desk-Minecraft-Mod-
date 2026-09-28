@@ -20,11 +20,15 @@ public final class ModNetworking {
 		ServerPlayNetworking.registerGlobalReceiver(SetChartPayload.TYPE, (payload, context) -> setChart(context.player(), payload));
 	}
 
-	/** Applies new settings to every screen in the chart, if the player can reach the one they used. */
+	/**
+	 * Applies new settings to every screen in the chart, if the player can reach the one they used. Whoever saves a
+	 * vote counter with auto-trade on becomes the player whose account it trades.
+	 */
 	private static void setChart(ServerPlayer player, SetChartPayload payload) {
 		BlockPos pos = payload.pos();
 		ServerLevel level = player.level();
-		if (!player.isWithinBlockInteractionRange(pos, 4.0) || !ChartScreenBlockEntity.isValid(payload.mode(), payload.instrument(), payload.granularity())) {
+		ChartScreenBlockEntity.Settings settings = payload.settings();
+		if (!player.isWithinBlockInteractionRange(pos, 4.0) || !settings.isValid()) {
 			return;
 		}
 		BlockState state = level.getBlockState(pos);
@@ -33,7 +37,7 @@ public final class ModNetworking {
 		}
 		for (BlockPos member : ChartGroup.of(level, pos, state.getValue(ChartScreenBlock.FACING)).members()) {
 			if (level.getBlockEntity(member) instanceof ChartScreenBlockEntity screen) {
-				screen.apply(payload.mode(), payload.instrument(), payload.granularity(), payload.showTrades(), payload.master());
+				screen.apply(settings, player.getUUID());
 			}
 		}
 	}

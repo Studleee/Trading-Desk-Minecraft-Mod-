@@ -61,6 +61,7 @@ public final class OandaData {
 
 	private volatile @Nullable Account account;
 	private volatile List<Trade> trades = List.of();
+	private volatile long tradesUpdated;
 	private volatile List<NavPoint> navHistory = List.of();
 	private volatile Map<String, Instrument> instruments = Map.of();
 	private final Map<String, Price> prices = new ConcurrentHashMap<>();
@@ -114,6 +115,11 @@ public final class OandaData {
 	public List<Trade> trades() {
 		accountWanted = System.currentTimeMillis();
 		return trades;
+	}
+
+	/** When the request for the current open trades was sent, in milliseconds since the epoch, or 0 if there isn't one yet. */
+	public long tradesUpdated() {
+		return tradesUpdated;
 	}
 
 	/** The NAV recorded while the game was running and something showed account info, oldest first. */
@@ -202,6 +208,7 @@ public final class OandaData {
 		accountId = null;
 		account = null;
 		trades = List.of();
+		tradesUpdated = 0;
 		navHistory = List.of();
 		instruments = Map.of();
 		prices.clear();
@@ -282,9 +289,11 @@ public final class OandaData {
 		}
 		try {
 			if (now - accountWanted < WANTED_FOR_MS && now - accountFetched >= ACCOUNT_EVERY_MS) {
+				long requested = System.currentTimeMillis();
 				Account fetched = current.account(id);
 				account = fetched;
 				trades = List.copyOf(current.openTrades(id));
+				tradesUpdated = requested;
 				accountFetched = now;
 				recordNav(id, fetched.nav(), now / 1000);
 			}

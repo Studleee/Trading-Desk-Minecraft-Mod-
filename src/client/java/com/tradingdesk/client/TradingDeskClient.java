@@ -9,6 +9,7 @@ import com.tradingdesk.client.screen.DeskScreen;
 import com.tradingdesk.registry.ModBlockEntities;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 
@@ -20,6 +21,7 @@ public class TradingDeskClient implements ClientModInitializer {
 		ClientHooks.openDesk = () -> Minecraft.getInstance().gui.setScreen(new DeskScreen());
 		ClientHooks.openChartSettings = pos -> Minecraft.getInstance().gui.setScreen(new ChartSettingsScreen(pos));
 		ClientHooks.tradeButton = TradeButtons::pressed;
+		ClientTickEvents.END_CLIENT_TICK.register(VoteTrader::tick);
 		OandaData.get();
 	}
 }

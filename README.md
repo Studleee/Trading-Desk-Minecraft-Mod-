@@ -7,6 +7,7 @@ A trading desk and wall chart screens for Minecraft 26.3 (Fabric), connected to 
 - **Account boards:** a screen doesn't have to be a chart. The buttons across the top of its settings switch it to **Account** (NAV, balance, P/L, margin), **Positions** (open trades added up per market), **Trades** (every open trade with stop loss and take profit), **NAV** (a graph of your NAV over the last day), **Watchlist** (live bid, ask, and spread), or **Ticker** (the watchlist scrolling past with each market's change on the day; best on a long row of screens one high). OANDA doesn't keep NAV history, so the mod records it every 30 seconds while the game runs and something shows your account (saved in `config/tradingdesk_nav.csv`, kept for 30 days). The graph fills in over time.
 
 - **Buy and sell buttons:** green and red stone buttons. Turn on **Master chart** in a chart's settings (it shows a gold MASTER tag), and pressing a button buys or sells that chart's market using the units, stop loss, and take profit last typed in the desk's order ticket. The nearest master chart within 32 blocks is used. Every press asks you to confirm, and the result shows above your hotbar. They still give a redstone pulse like any button.
+- **Vote counter:** set a screen to **Votes**. Players standing on a **green vote plate** add +1 and on a **red vote plate** add -1, counted live on the nearest vote counter within 32 blocks; stepping off takes the vote away. The screen shows the net vote, the yes and no counts, and the position the vote asks for (net votes x units per vote, set in the screen's settings). Turn on **Auto-trade** (it asks you to confirm, and only the player who turns it on trades) and your position on the nearest master chart follows the vote: long when positive, short when negative, closed at zero. Orders go in without asking, once the vote has held for 3 seconds, while you're within 64 blocks of the counter.
 
 ## Connecting your account
 
@@ -46,6 +47,9 @@ Chart screen (makes 2):  N G N     N = iron nugget
 
 Buy button:   stone button + green dye (shapeless)
 Sell button:  stone button + red dye (shapeless)
+
+Green vote plate:  stone pressure plate + green dye (shapeless)
+Red vote plate:    stone pressure plate + red dye (shapeless)
 ```
 
 ## Quick start
@@ -60,14 +64,17 @@ src/main/java/com/tradingdesk/
   block/ChartScreenBlock.java        the wall screen
   block/ChartScreenBlockEntity.java  what a chart shows (saved in the world)
   block/ChartGroup.java              how touching screens merge into one chart
+  block/VotePlateBlock.java          the green and red vote plates
+  block/VoteTally.java               counts players on vote plates for the nearest vote counter
   network/                           the message a player sends when changing a chart's settings
 
 src/client/java/com/tradingdesk/client/
   oanda/OandaConfig.java             reads config/tradingdesk.json
   oanda/OandaApi.java                calls OANDA's v20 REST API
   oanda/OandaData.java               background polling, only for what's on screen; orders and closes
+  VoteTrader.java                    keeps the master chart's position at the vote, when auto-trade is on
   render/ChartPainter.java           draws candlestick charts
-  render/BoardPainter.java           draws the account, positions, trades, NAV, and watchlist boards
+  render/BoardPainter.java           draws the account boards, the ticker, and the vote counter
   render/ChartScreenRenderer.java    charts and boards on wall screens
   render/TradingDeskRenderer.java    the desk's monitor
   screen/DeskScreen.java             the trading terminal

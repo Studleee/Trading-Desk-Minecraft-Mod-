@@ -326,17 +326,71 @@ foreach ($b in $buttons) {
 "@
 }
 
+# ---- Vote plates: stone pressure plates in the buttons' green and red ----
+$plates = @(
+	@('green_vote_plate', 'buy_button', 'minecraft:green_dye'),
+	@('red_vote_plate', 'sell_button', 'minecraft:red_dye')
+)
+foreach ($p in $plates) {
+	$id, $texture, $dye = $p
+	Write-Json (Join-Path $assets "models\block\$id.json") "{ `"parent`": `"minecraft:block/pressure_plate_up`", `"textures`": { `"texture`": `"tradingdesk:block/$texture`" } }"
+	Write-Json (Join-Path $assets "models\block\${id}_down.json") "{ `"parent`": `"minecraft:block/pressure_plate_down`", `"textures`": { `"texture`": `"tradingdesk:block/$texture`" } }"
+	Write-Json (Join-Path $assets "items\$id.json") "{ `"model`": { `"type`": `"minecraft:model`", `"model`": `"tradingdesk:block/$id`" } }"
+	Write-Json (Join-Path $assets "blockstates\$id.json") @"
+{
+	"variants": {
+		"powered=false": { "model": "tradingdesk:block/$id" },
+		"powered=true": { "model": "tradingdesk:block/${id}_down" }
+	}
+}
+"@
+	Write-Json (Join-Path $data "loot_table\blocks\$id.json") @"
+{
+	"type": "minecraft:block",
+	"pools": [
+		{
+			"rolls": 1,
+			"conditions": [ { "condition": "minecraft:survives_explosion" } ],
+			"entries": [ { "type": "minecraft:item", "name": "tradingdesk:$id" } ]
+		}
+	]
+}
+"@
+	# A stone pressure plate and a dye.
+	Write-Json (Join-Path $data "recipe\$id.json") @"
+{
+	"type": "minecraft:crafting_shapeless",
+	"category": "redstone",
+	"ingredients": [ "minecraft:stone_pressure_plate", "$dye" ],
+	"result": { "id": "tradingdesk:$id", "count": 1 }
+}
+"@
+	Write-Json (Join-Path $data "advancement\recipes\redstone\$id.json") @"
+{
+	"parent": "minecraft:recipes/root",
+	"criteria": {
+		"has_plate": { "conditions": { "items": [ { "items": "minecraft:stone_pressure_plate" } ] }, "trigger": "minecraft:inventory_changed" },
+		"has_the_recipe": { "conditions": { "recipes": "tradingdesk:$id" }, "trigger": "minecraft:recipe_unlocked" }
+	},
+	"requirements": [ [ "has_the_recipe", "has_plate" ] ],
+	"rewards": { "recipes": [ "tradingdesk:$id" ] }
+}
+"@
+}
+
 # ---- Tool tags and names ----
 Write-Json (Join-Path $root 'data\minecraft\tags\block\mineable\axe.json') '{ "values": [ "tradingdesk:trading_desk" ] }'
-Write-Json (Join-Path $root 'data\minecraft\tags\block\mineable\pickaxe.json') '{ "values": [ "tradingdesk:chart_screen", "tradingdesk:buy_button", "tradingdesk:sell_button" ] }'
+Write-Json (Join-Path $root 'data\minecraft\tags\block\mineable\pickaxe.json') '{ "values": [ "tradingdesk:chart_screen", "tradingdesk:buy_button", "tradingdesk:sell_button", "tradingdesk:green_vote_plate", "tradingdesk:red_vote_plate" ] }'
 Write-Json (Join-Path $assets 'lang\en_us.json') @'
 {
 	"creativeTab.tradingdesk": "Trading Desk",
 	"block.tradingdesk.trading_desk": "Trading Desk",
 	"block.tradingdesk.chart_screen": "Chart Screen",
 	"block.tradingdesk.buy_button": "Buy Button",
-	"block.tradingdesk.sell_button": "Sell Button"
+	"block.tradingdesk.sell_button": "Sell Button",
+	"block.tradingdesk.green_vote_plate": "Green Vote Plate",
+	"block.tradingdesk.red_vote_plate": "Red Vote Plate"
 }
 '@
 
-Write-Host "Generated the trading desk, chart screen, buy and sell buttons, and icon."
+Write-Host "Generated the trading desk, chart screen, buy and sell buttons, vote plates, and icon."

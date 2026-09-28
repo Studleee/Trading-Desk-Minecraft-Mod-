@@ -1,0 +1,6 @@
+{
+	"variants": {
+		"powered=false": { "model": "tradingdesk:block/red_vote_plate" },
+		"powered=true": { "model": "tradingdesk:block/red_vote_plate_down" }
+	}
+}

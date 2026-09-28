@@ -50,6 +50,7 @@ final class BoardPainter {
 			case "nav" -> "NAV";
 			case "watchlist" -> "Watchlist";
 			case "ticker" -> "Ticker";
+			case "votes" -> "Votes";
 			default -> "Chart";
 		};
 	}
@@ -77,6 +78,48 @@ final class BoardPainter {
 			default -> {
 			}
 		}
+	}
+
+	/**
+	 * The vote counter: the net vote as big as fits, colored by which way it leans, the yes and no counts, a bar split
+	 * between them, and the position the vote asks for. Doesn't need OANDA, since the votes come from the plates.
+	 */
+	static void votes(Canvas canvas, float w, float h, float textScale, int yes, int no, int unitsPerVote, boolean autoTrade) {
+		canvas.rect(0, 0, w, h, ChartPainter.BACKGROUND, 0);
+		float pad = 2.0F * textScale;
+		int net = yes - no;
+		int color = net > 0 ? UP : net < 0 ? DOWN : TEXT;
+		header(canvas, w, textScale, pad, "Votes", autoTrade ? new Cell("AUTO-TRADE ON", 0xFFE3B341) : new Cell("Auto-trade off", DIM));
+		float top = pad + 10 * textScale + pad;
+
+		float footerScale = textScale * 0.9F;
+		float footerHeight = 3 * 10 * footerScale + pad;
+		String netText = String.format("%+d", net).replace("+0", "0");
+		float available = h - top - footerHeight - pad;
+		float netScale = Math.min(available / 8.0F, (w - 2 * pad) / Math.max(1, canvas.width(netText, 1.0F)));
+		netScale = Math.max(textScale, netScale * 0.85F);
+		canvas.text(netText, w / 2 - canvas.width(netText, netScale) / 2, top + available / 2 - 4 * netScale, netScale, color, 3);
+
+		float y = h - footerHeight;
+		String counts = "\u25B2 " + yes + " yes";
+		String against = no + " no \u25BC";
+		canvas.text(counts, pad, y, footerScale, UP, 3);
+		canvas.rightText(against, w - pad, y, footerScale, DOWN, 3);
+		y += 10 * footerScale;
+		float barHeight = 5 * footerScale;
+		int total = yes + no;
+		if (total == 0) {
+			canvas.rect(pad, y, w - pad, y + barHeight, RULE, 1);
+		} else {
+			float split = pad + (w - 2 * pad) * yes / total;
+			canvas.rect(pad, y, split, y + barHeight, UP, 1);
+			canvas.rect(split, y, w - pad, y + barHeight, DOWN, 1);
+		}
+		y += barHeight + 3 * footerScale;
+		long target = (long) net * unitsPerVote;
+		String position = target == 0 ? "Position: flat" : String.format("Position: %s %,d", target > 0 ? "long" : "short", Math.abs(target));
+		canvas.text(position, pad, y, footerScale, color, 3);
+		canvas.rightText(String.format("%,d per vote", unitsPerVote), w - pad, y, footerScale, DIM, 3);
 	}
 
 	private static void header(Canvas canvas, float w, float textScale, float pad, String left, @Nullable Cell right) {

@@ -15,7 +15,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 /** What happens on the pressing player's side when they press a buy or sell button. */
 final class TradeButtons {
 	/** How far from a button its master chart can be, in blocks. */
-	private static final int RANGE = 32;
+	static final int RANGE = 32;
 
 	private TradeButtons() {
 	}
@@ -37,7 +37,7 @@ final class TradeButtons {
 	}
 
 	/** The closest set-up master chart screen within range, looking through the loaded chunks around pos. */
-	private static @Nullable ChartScreenBlockEntity nearestMaster(ClientLevel level, BlockPos pos) {
+	static @Nullable ChartScreenBlockEntity nearestMaster(ClientLevel level, BlockPos pos) {
 		ChartScreenBlockEntity best = null;
 		double bestDistance = (double) RANGE * RANGE;
 		int chunkRange = (RANGE >> 4) + 1;
@@ -63,7 +63,7 @@ final class TradeButtons {
 		return best;
 	}
 
-	private static void tell(Minecraft minecraft, String message, boolean bad) {
+	static void tell(Minecraft minecraft, String message, boolean bad) {
 		if (minecraft.player != null) {
 			minecraft.player.sendOverlayMessage(Component.literal(message).withColor(bad ? 0xFFF85149 : 0xFF3FB950));
 		}

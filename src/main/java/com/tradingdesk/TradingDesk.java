@@ -1,5 +1,6 @@
 package com.tradingdesk;
 
+import com.tradingdesk.block.VoteTally;
 import com.tradingdesk.network.ModNetworking;
 import com.tradingdesk.registry.ModBlockEntities;
 import com.tradingdesk.registry.ModBlocks;
@@ -21,6 +22,7 @@ public class TradingDesk implements ModInitializer {
 		ModBlockEntities.initialize();
 		ModCreativeTab.initialize();
 		ModNetworking.initialize();
+		VoteTally.initialize();
 		LOGGER.info("{} loaded", MOD_ID);
 	}
 

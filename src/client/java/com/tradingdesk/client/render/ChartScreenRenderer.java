@@ -61,6 +61,10 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		state.granularity = screen.granularity();
 		state.showTrades = screen.showTrades();
 		state.master = screen.master();
+		state.yesVotes = screen.yesVotes();
+		state.noVotes = screen.noVotes();
+		state.unitsPerVote = screen.unitsPerVote();
+		state.autoTrade = screen.autoTrade();
 	}
 
 	@Override
@@ -81,6 +85,8 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		float h = state.height * UNITS - 2 * BEZEL;
 		if (state.mode.equals("chart")) {
 			ChartPainter.paint(canvas, w, h, textScale, state.instrument, state.granularity, state.showTrades, state.master, null);
+		} else if (state.mode.equals("votes")) {
+			BoardPainter.votes(canvas, w, h, textScale, state.yesVotes, state.noVotes, state.unitsPerVote, state.autoTrade);
 		} else {
 			BoardPainter.paint(canvas, w, h, textScale, state.mode);
 		}
@@ -103,6 +109,10 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		int width = 1;
 		int height = 1;
 		String mode = "chart";
+		int yesVotes;
+		int noVotes;
+		int unitsPerVote = 1000;
+		boolean autoTrade;
 		String instrument = "";
 		String granularity = "M15";
 		boolean showTrades;

@@ -3,10 +3,12 @@ package com.tradingdesk.registry;
 import com.tradingdesk.block.ChartScreenBlock;
 import com.tradingdesk.block.TradeButtonBlock;
 import com.tradingdesk.block.TradingDeskBlock;
+import com.tradingdesk.block.VotePlateBlock;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 
@@ -48,6 +50,30 @@ public final class ModBlocks {
 		properties -> new TradeButtonBlock(false, properties),
 		buttonProperties(MapColor.COLOR_RED)
 	);
+
+	/** Votes yes (+1) on the nearest vote counter while a player stands on it. */
+	public static final Block GREEN_VOTE_PLATE = Register.block(
+		"green_vote_plate",
+		properties -> new VotePlateBlock(true, properties),
+		plateProperties(MapColor.COLOR_GREEN)
+	);
+
+	/** Votes no (-1) on the nearest vote counter while a player stands on it. */
+	public static final Block RED_VOTE_PLATE = Register.block(
+		"red_vote_plate",
+		properties -> new VotePlateBlock(false, properties),
+		plateProperties(MapColor.COLOR_RED)
+	);
+
+	private static BlockBehaviour.Properties plateProperties(MapColor color) {
+		return BlockBehaviour.Properties.of()
+			.mapColor(color)
+			.forceSolidOn()
+			.instrument(NoteBlockInstrument.BASEDRUM)
+			.noCollision()
+			.strength(0.5F)
+			.pushReaction(PushReaction.POPPED);
+	}
 
 	private static BlockBehaviour.Properties buttonProperties(MapColor color) {
 		return BlockBehaviour.Properties.of().mapColor(color).noCollision().strength(0.5F).pushReaction(PushReaction.POPPED);

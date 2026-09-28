@@ -1,0 +1,6 @@
+{
+	"type": "minecraft:crafting_shapeless",
+	"category": "redstone",
+	"ingredients": [ "minecraft:stone_pressure_plate", "minecraft:red_dye" ],
+	"result": { "id": "tradingdesk:red_vote_plate", "count": 1 }
+}
