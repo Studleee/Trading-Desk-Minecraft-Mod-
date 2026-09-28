@@ -49,7 +49,7 @@ public class ChartSettingsScreen extends Screen {
 		"A graph of your NAV over the last day. OANDA doesn't keep NAV history, so it's recorded every 30 seconds while the game runs and something shows your account.",
 		"Live bid, ask, and spread for your watchlist. Add markets at the desk.",
 		"Your watchlist scrolling past in one line: price and change since the day's open. Best on a long row of screens one high, like above a doorway.",
-		"Counts players standing on green vote plates (+1) and red vote plates (-1) within 32 blocks. Stepping off takes the vote away."
+		"Counts everything standing on green vote plates (+1) and red vote plates (-1) within 32 blocks: players, villagers, animals, monsters, and bots. Stepping off takes the vote away."
 	};
 
 	private final BlockPos pos;

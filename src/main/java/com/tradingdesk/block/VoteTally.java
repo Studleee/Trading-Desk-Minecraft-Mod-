@@ -2,6 +2,7 @@ package com.tradingdesk.block;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -11,14 +12,14 @@ import org.jspecify.annotations.Nullable;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
- * Counts the votes: twice a second, every player standing on a vote plate counts toward the nearest vote counter
- * within {@link #RANGE} blocks of that plate. Stepping off takes the vote away.
+ * Counts the votes: twice a second, every mob standing on a vote plate (players, villagers, animals, monsters, bots)
+ * counts toward the nearest vote counter within {@link #RANGE} blocks of that plate. Stepping off takes the vote away.
  */
 public final class VoteTally {
 	/** How far from a vote plate its counter can be, in blocks. */
@@ -26,6 +27,8 @@ public final class VoteTally {
 	private static final int INTERVAL_TICKS = 10;
 	/** Counters that had votes last time, per level, so they can go back to zero when everyone steps off. */
 	private static final Map<ServerLevel, Set<BlockPos>> counted = new WeakHashMap<>();
+	/** Vote plates something has stepped on and may still be standing on, per level. */
+	private static final Map<ServerLevel, Set<BlockPos>> occupied = new WeakHashMap<>();
 
 	private VoteTally() {
 	}
@@ -34,22 +37,31 @@ public final class VoteTally {
 		ServerTickEvents.END_LEVEL_TICK.register(VoteTally::tick);
 	}
 
+	/** Remembers a vote plate something is standing on, until nothing is. */
+	static void pressed(Level level, BlockPos pos) {
+		if (level instanceof ServerLevel serverLevel) {
+			occupied.computeIfAbsent(serverLevel, l -> new HashSet<>()).add(pos.immutable());
+		}
+	}
+
 	private static void tick(ServerLevel level) {
 		if (level.getGameTime() % INTERVAL_TICKS != 0) {
 			return;
 		}
 		Map<BlockPos, int[]> tallies = new HashMap<>();
-		for (ServerPlayer player : level.players()) {
-			if (player.isSpectator()) {
+		Set<BlockPos> plates = occupied.getOrDefault(level, Set.of());
+		for (Iterator<BlockPos> it = plates.iterator(); it.hasNext(); ) {
+			BlockPos platePos = it.next();
+			int voters = level.isLoaded(platePos) && level.getBlockState(platePos).getBlock() instanceof VotePlateBlock plate
+				? plate.voters(level, platePos) : 0;
+			if (voters == 0) {
+				it.remove();
 				continue;
 			}
-			BlockPos feet = player.blockPosition();
-			if (!(level.getBlockState(feet).getBlock() instanceof VotePlateBlock plate)) {
-				continue;
-			}
-			BlockPos counter = nearestCounter(level, feet);
+			BlockPos counter = nearestCounter(level, platePos);
 			if (counter != null) {
-				tallies.computeIfAbsent(counter, pos -> new int[2])[plate.yes() ? 0 : 1]++;
+				boolean yes = ((VotePlateBlock) level.getBlockState(platePos).getBlock()).yes();
+				tallies.computeIfAbsent(counter, pos -> new int[2])[yes ? 0 : 1] += voters;
 			}
 		}
 		for (BlockPos pos : counted.getOrDefault(level, Set.of())) {
