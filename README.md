@@ -5,6 +5,8 @@ A trading desk and wall chart screens for Minecraft 26.3 (Fabric), connected to 
 - **Trading desk:** right-click it to open the terminal: balance, NAV, unrealized P/L, and margin across the top; a watchlist of live bid/ask prices; a market order ticket (units, optional stop loss and take profit); and your open trades with close buttons. Every order and every close asks you to confirm first. The desk's monitor shows your NAV and P/L over a chart of the market you last picked.
 - **Chart screens:** hang them on a wall like paintings. Screens touching side by side or stacked (facing the same way) merge into one big chart, up to 12 x 12. Right-click to pick the market, the timeframe (1m, 5m, 15m, 1h, 4h, 1D), and whether your open trades show on it (entry line with P/L, stop loss, take profit). The newest candle follows the live price.
 
+- **Buy and sell buttons:** green and red stone buttons. Turn on **Master chart** in a chart's settings (it shows a gold MASTER tag), and pressing a button buys or sells that chart's market using the units, stop loss, and take profit last typed in the desk's order ticket. The nearest master chart within 32 blocks is used. Every press asks you to confirm, and the result shows above your hotbar. They still give a redstone pulse like any button.
+
 ## Connecting your account
 
 1. Launch the game once. It creates `run/config/tradingdesk.json` (in a normal install, `.minecraft/config/tradingdesk.json`).
@@ -40,6 +42,9 @@ Trading desk:  R G R     R = redstone, G = glass pane
 Chart screen (makes 2):  N G N     N = iron nugget
                          G R G
                          N G N
+
+Buy button:   stone button + green dye (shapeless)
+Sell button:  stone button + red dye (shapeless)
 ```
 
 ## Quick start
