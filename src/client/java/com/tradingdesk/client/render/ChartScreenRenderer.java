@@ -56,6 +56,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		state.facing = facing;
 		state.width = group.width();
 		state.height = group.height();
+		state.mode = screen.mode();
 		state.instrument = screen.instrument();
 		state.granularity = screen.granularity();
 		state.showTrades = screen.showTrades();
@@ -75,16 +76,14 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		poseStack.scale(1.0F / UNITS, -1.0F / UNITS, 1.0F / UNITS);
 		poseStack.translate(BEZEL, BEZEL, 0.0F);
 		float textScale = Math.clamp(0.35F * Math.min(state.width, state.height) + 0.35F, 0.7F, 2.0F);
-		ChartPainter.paint(
-			new Canvas(poseStack, collector, font, FULL_BRIGHT),
-			state.width * UNITS - 2 * BEZEL,
-			state.height * UNITS - 2 * BEZEL,
-			textScale,
-			state.instrument,
-			state.granularity,
-			state.showTrades,
-			state.master,
-			null);
+		Canvas canvas = new Canvas(poseStack, collector, font, FULL_BRIGHT);
+		float w = state.width * UNITS - 2 * BEZEL;
+		float h = state.height * UNITS - 2 * BEZEL;
+		if (state.mode.equals("chart")) {
+			ChartPainter.paint(canvas, w, h, textScale, state.instrument, state.granularity, state.showTrades, state.master, null);
+		} else {
+			BoardPainter.paint(canvas, w, h, textScale, state.mode);
+		}
 		poseStack.popPose();
 	}
 
@@ -103,6 +102,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		Direction facing = Direction.NORTH;
 		int width = 1;
 		int height = 1;
+		String mode = "chart";
 		String instrument = "";
 		String granularity = "M15";
 		boolean showTrades;

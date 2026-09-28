@@ -1,5 +1,10 @@
 package com.tradingdesk.client.oanda;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,11 +18,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.jspecify.annotations.Nullable;
 
+import net.fabricmc.loader.api.FabricLoader;
+
 import com.tradingdesk.TradingDesk;
 import com.tradingdesk.client.oanda.OandaApi.OandaException;
 import com.tradingdesk.client.oanda.OandaModels.Account;
 import com.tradingdesk.client.oanda.OandaModels.Candle;
 import com.tradingdesk.client.oanda.OandaModels.Instrument;
+import com.tradingdesk.client.oanda.OandaModels.NavPoint;
 import com.tradingdesk.client.oanda.OandaModels.Price;
 import com.tradingdesk.client.oanda.OandaModels.Trade;
 
@@ -36,6 +44,8 @@ public final class OandaData {
 	private static final long ACCOUNT_EVERY_MS = 2_000;
 	private static final long RETRY_AFTER_MS = 15_000;
 	private static final int CANDLE_COUNT = 150;
+	private static final long NAV_EVERY_SECONDS = 30;
+	private static final long NAV_KEEP_SECONDS = 30L * 24 * 60 * 60;
 
 	private static final OandaData INSTANCE = new OandaData();
 
@@ -51,6 +61,7 @@ public final class OandaData {
 
 	private volatile @Nullable Account account;
 	private volatile List<Trade> trades = List.of();
+	private volatile List<NavPoint> navHistory = List.of();
 	private volatile Map<String, Instrument> instruments = Map.of();
 	private final Map<String, Price> prices = new ConcurrentHashMap<>();
 	private final Map<String, List<Candle>> candles = new ConcurrentHashMap<>();
@@ -103,6 +114,12 @@ public final class OandaData {
 	public List<Trade> trades() {
 		accountWanted = System.currentTimeMillis();
 		return trades;
+	}
+
+	/** The NAV recorded while the game was running and something showed account info, oldest first. */
+	public List<NavPoint> navHistory() {
+		accountWanted = System.currentTimeMillis();
+		return navHistory;
 	}
 
 	public @Nullable Price price(String instrument) {
@@ -185,6 +202,7 @@ public final class OandaData {
 		accountId = null;
 		account = null;
 		trades = List.of();
+		navHistory = List.of();
 		instruments = Map.of();
 		prices.clear();
 		candles.clear();
@@ -244,6 +262,7 @@ public final class OandaData {
 				byName.put(instrument.name(), instrument);
 			}
 			instruments = Map.copyOf(byName);
+			navHistory = loadNav(id);
 			accountId = id;
 			api = candidate;
 			status = Status.CONNECTED;
@@ -263,9 +282,11 @@ public final class OandaData {
 		}
 		try {
 			if (now - accountWanted < WANTED_FOR_MS && now - accountFetched >= ACCOUNT_EVERY_MS) {
-				account = current.account(id);
+				Account fetched = current.account(id);
+				account = fetched;
 				trades = List.copyOf(current.openTrades(id));
 				accountFetched = now;
+				recordNav(id, fetched.nav(), now / 1000);
 			}
 
 			List<String> wantedPrices = new ArrayList<>();
@@ -307,6 +328,63 @@ public final class OandaData {
 				api = null;
 				retryAt = now + RETRY_AFTER_MS;
 			}
+		}
+	}
+
+	// ---- NAV history, kept in config/tradingdesk_nav.csv as "account,seconds,nav" lines ----
+
+	private static Path navPath() {
+		return FabricLoader.getInstance().getConfigDir().resolve(TradingDesk.MOD_ID + "_nav.csv");
+	}
+
+	/** Reads this account's history, and rewrites the file without anything older than {@link #NAV_KEEP_SECONDS}. */
+	private static List<NavPoint> loadNav(String id) {
+		Path path = navPath();
+		if (!Files.exists(path)) {
+			return List.of();
+		}
+		long cutoff = System.currentTimeMillis() / 1000 - NAV_KEEP_SECONDS;
+		List<String> kept = new ArrayList<>();
+		List<NavPoint> points = new ArrayList<>();
+		try {
+			for (String line : Files.readAllLines(path, StandardCharsets.UTF_8)) {
+				String[] parts = line.split(",");
+				if (parts.length != 3) {
+					continue;
+				}
+				try {
+					long time = Long.parseLong(parts[1]);
+					if (time < cutoff) {
+						continue;
+					}
+					kept.add(line);
+					if (parts[0].equals(id)) {
+						points.add(new NavPoint(time, Double.parseDouble(parts[2])));
+					}
+				} catch (NumberFormatException ignored) {
+				}
+			}
+			Files.write(path, kept, StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			TradingDesk.LOGGER.warn("Couldn't read NAV history: {}", e.getMessage());
+		}
+		return List.copyOf(points);
+	}
+
+	private void recordNav(String id, double nav, long time) {
+		List<NavPoint> history = navHistory;
+		if (!history.isEmpty() && time - history.getLast().time() < NAV_EVERY_SECONDS) {
+			return;
+		}
+		List<NavPoint> updated = new ArrayList<>(history);
+		updated.add(new NavPoint(time, nav));
+		long cutoff = time - NAV_KEEP_SECONDS;
+		updated.removeIf(point -> point.time() < cutoff);
+		navHistory = List.copyOf(updated);
+		try {
+			Files.writeString(navPath(), id + "," + time + "," + nav + "\n", StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			TradingDesk.LOGGER.warn("Couldn't save NAV history: {}", e.getMessage());
 		}
 	}
 

@@ -24,7 +24,7 @@ public final class ModNetworking {
 	private static void setChart(ServerPlayer player, SetChartPayload payload) {
 		BlockPos pos = payload.pos();
 		ServerLevel level = player.level();
-		if (!player.isWithinBlockInteractionRange(pos, 4.0) || !ChartScreenBlockEntity.isValid(payload.instrument(), payload.granularity())) {
+		if (!player.isWithinBlockInteractionRange(pos, 4.0) || !ChartScreenBlockEntity.isValid(payload.mode(), payload.instrument(), payload.granularity())) {
 			return;
 		}
 		BlockState state = level.getBlockState(pos);
@@ -33,7 +33,7 @@ public final class ModNetworking {
 		}
 		for (BlockPos member : ChartGroup.of(level, pos, state.getValue(ChartScreenBlock.FACING)).members()) {
 			if (level.getBlockEntity(member) instanceof ChartScreenBlockEntity screen) {
-				screen.apply(payload.instrument(), payload.granularity(), payload.showTrades(), payload.master());
+				screen.apply(payload.mode(), payload.instrument(), payload.granularity(), payload.showTrades(), payload.master());
 			}
 		}
 	}

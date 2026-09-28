@@ -7,9 +7,14 @@ public final class OandaModels {
 	private OandaModels() {
 	}
 
+	/** An account summary. Realized P/L is the account's lifetime total. */
 	public record Account(
-		String id, String currency, double balance, double nav, double unrealizedPl, double marginUsed, double marginAvailable
+		String id, String currency, double balance, double nav, double unrealizedPl, double realizedPl, double marginUsed, double marginAvailable
 	) {
+	}
+
+	/** The account's NAV at a moment, in seconds since 1970. */
+	public record NavPoint(long time, double nav) {
 	}
 
 	public record Price(String instrument, double bid, double ask, boolean tradeable) {

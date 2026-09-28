@@ -79,6 +79,7 @@ final class OandaApi {
 			number(account, "balance"),
 			number(account, "NAV"),
 			number(account, "unrealizedPL"),
+			number(account, "pl"),
 			number(account, "marginUsed"),
 			number(account, "marginAvailable"));
 	}

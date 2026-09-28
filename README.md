@@ -4,6 +4,7 @@ A trading desk and wall chart screens for Minecraft 26.3 (Fabric), connected to 
 
 - **Trading desk:** right-click it to open the terminal: balance, NAV, unrealized P/L, and margin across the top; a watchlist of live bid/ask prices; a market order ticket (units, optional stop loss and take profit); and your open trades with close buttons. Every order and every close asks you to confirm first. The desk's monitor shows your NAV and P/L over a chart of the market you last picked.
 - **Chart screens:** hang them on a wall like paintings. Screens touching side by side or stacked (facing the same way) merge into one big chart, up to 12 x 12. Right-click to pick the market, the timeframe (1m, 5m, 15m, 1h, 4h, 1D), and whether your open trades show on it (entry line with P/L, stop loss, take profit). The newest candle follows the live price.
+- **Account boards:** a screen doesn't have to be a chart. The buttons across the top of its settings switch it to **Account** (NAV, balance, P/L, margin), **Positions** (open trades added up per market), **Trades** (every open trade with stop loss and take profit), **NAV** (a graph of your NAV over the last day), or **Watchlist** (live bid, ask, and spread). OANDA doesn't keep NAV history, so the mod records it every 30 seconds while the game runs and something shows your account (saved in `config/tradingdesk_nav.csv`, kept for 30 days). The graph fills in over time.
 
 - **Buy and sell buttons:** green and red stone buttons. Turn on **Master chart** in a chart's settings (it shows a gold MASTER tag), and pressing a button buys or sells that chart's market using the units, stop loss, and take profit last typed in the desk's order ticket. The nearest master chart within 32 blocks is used. Every press asks you to confirm, and the result shows above your hotbar. They still give a redstone pulse like any button.
 
@@ -66,10 +67,11 @@ src/client/java/com/tradingdesk/client/
   oanda/OandaApi.java                calls OANDA's v20 REST API
   oanda/OandaData.java               background polling, only for what's on screen; orders and closes
   render/ChartPainter.java           draws candlestick charts
-  render/ChartScreenRenderer.java    charts on wall screens
+  render/BoardPainter.java           draws the account, positions, trades, NAV, and watchlist boards
+  render/ChartScreenRenderer.java    charts and boards on wall screens
   render/TradingDeskRenderer.java    the desk's monitor
   screen/DeskScreen.java             the trading terminal
-  screen/ChartSettingsScreen.java    picking a chart's market and timeframe
+  screen/ChartSettingsScreen.java    picking what a screen shows
 ```
 
 Textures, models, recipes, and names come from `tools/gen-assets.ps1`:

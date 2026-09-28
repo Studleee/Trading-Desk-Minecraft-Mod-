@@ -69,7 +69,7 @@ public class ChartScreenBlock extends BaseEntityBlock {
 		for (Direction side : new Direction[] {right, right.getOpposite(), Direction.UP, Direction.DOWN}) {
 			BlockPos next = pos.relative(side);
 			if (ChartGroup.isScreen(level, next, facing) && level.getBlockEntity(next) instanceof ChartScreenBlockEntity other && other.isSetUp()) {
-				placed.apply(other.instrument(), other.granularity(), other.showTrades(), other.master());
+				placed.apply(other.mode(), other.instrument(), other.granularity(), other.showTrades(), other.master());
 				return;
 			}
 		}
