@@ -26,6 +26,7 @@ final class BoardPainter {
 	private static final int DOWN = ChartPainter.DOWN;
 	private static final int STRIPE = 0xFF121821;
 	private static final int RULE = 0xFF30363D;
+	private static final int COUNTDOWN = 0xFFE3B341;
 	private static final long NAV_WINDOW_SECONDS = 24 * 60 * 60;
 
 	private BoardPainter() {
@@ -82,18 +83,29 @@ final class BoardPainter {
 
 	/**
 	 * The vote counter: the net vote as big as fits, colored by which way it leans, the yes and no counts, a bar split
-	 * between them, and the position the vote asks for. Doesn't need OANDA, since the votes come from the plates.
+	 * between them, the position the vote asks for, and (with auto-trade on) the countdown to the end of the round,
+	 * when that position is traded. Doesn't need OANDA, since the votes come from the plates.
 	 */
-	static void votes(Canvas canvas, float w, float h, float textScale, int yes, int no, int unitsPerVote, boolean autoTrade) {
+	static void votes(Canvas canvas, float w, float h, float textScale, int yes, int no, int unitsPerVote, boolean autoTrade, long ticksLeft) {
 		canvas.rect(0, 0, w, h, ChartPainter.BACKGROUND, 0);
 		float pad = 2.0F * textScale;
 		int net = yes - no;
 		int color = net > 0 ? UP : net < 0 ? DOWN : TEXT;
-		header(canvas, w, textScale, pad, "Votes", autoTrade ? new Cell("AUTO-TRADE ON", 0xFFE3B341) : new Cell("Auto-trade off", DIM));
+		long seconds = (ticksLeft + 19) / 20;
+		String countdown = seconds >= 3600
+			? String.format("%d:%02d:%02d", seconds / 3600, seconds % 3600 / 60, seconds % 60)
+			: String.format("%d:%02d", seconds / 60, seconds % 60);
+		header(canvas, w, textScale, pad, "Votes", autoTrade ? new Cell("AUTO", COUNTDOWN) : new Cell("Auto-trade off", DIM));
 		float top = pad + 10 * textScale + pad;
 
 		float footerScale = textScale * 0.9F;
 		float footerHeight = 3 * 10 * footerScale + pad;
+		if (autoTrade) {
+			String next = "Next trade in " + countdown;
+			float nextScale = Math.min(footerScale * 1.2F, (w - 2 * pad) / Math.max(1, canvas.width(next, 1.0F)));
+			canvas.text(next, w / 2 - canvas.width(next, nextScale) / 2, top, nextScale, COUNTDOWN, 3);
+			top += 10 * nextScale;
+		}
 		String netText = String.format("%+d", net).replace("+0", "0");
 		float available = h - top - footerHeight - pad;
 		float netScale = Math.min(available / 8.0F, (w - 2 * pad) / Math.max(1, canvas.width(netText, 1.0F)));

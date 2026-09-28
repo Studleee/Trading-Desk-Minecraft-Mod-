@@ -60,6 +60,7 @@ public class ChartSettingsScreen extends Screen {
 	private boolean showTrades;
 	private boolean master;
 	private String unitsPerVote;
+	private String roundMinutes;
 	private boolean autoTrade;
 	private String search = "";
 	private String problem = "";
@@ -97,6 +98,7 @@ public class ChartSettingsScreen extends Screen {
 		this.showTrades = current.showTrades();
 		this.master = current.master();
 		this.unitsPerVote = String.valueOf(current.unitsPerVote());
+		this.roundMinutes = String.valueOf(current.roundMinutes());
 		this.autoTrade = currentAutoTrade;
 	}
 
@@ -183,7 +185,15 @@ public class ChartSettingsScreen extends Screen {
 			problem = "";
 		});
 		voteWidgets.add(addRenderableWidget(unitsBox));
-		autoTradeButton = addRenderableWidget(Button.builder(Component.empty(), b -> toggleAutoTrade()).bounds(listLeft(), 148, 170, 18).build());
+		EditBox minutesBox = new EditBox(font, listLeft() + 90, 146, 80, 16, Component.literal("Minutes per round"));
+		minutesBox.setMaxLength(4);
+		minutesBox.setValue(roundMinutes);
+		minutesBox.setResponder(value -> {
+			roundMinutes = value;
+			problem = "";
+		});
+		voteWidgets.add(addRenderableWidget(minutesBox));
+		autoTradeButton = addRenderableWidget(Button.builder(Component.empty(), b -> toggleAutoTrade()).bounds(listLeft(), 168, 170, 18).build());
 		voteWidgets.add(autoTradeButton);
 
 		addRenderableWidget(Button.builder(Component.literal("Done"), b -> save()).bounds(x, height - 30, 64, 20).build());
@@ -223,9 +233,9 @@ public class ChartSettingsScreen extends Screen {
 		Component heading = live
 			? Component.literal("LIVE ACCOUNT: let the vote trade real money?").withColor(ERROR)
 			: Component.literal("Let the vote trade your practice account?");
-		Component message = Component.literal("Your position on the nearest master chart will follow the vote: net votes x "
-			+ unitsPerVote + " units, long when positive, short when negative, and closed at zero. Orders go in without asking, "
-			+ "a few seconds after the vote settles, while you're within 64 blocks.");
+		Component message = Component.literal("Every " + roundMinutes + " minutes, your position on the nearest master chart will be set to "
+			+ "the vote: net votes x " + unitsPerVote + " units, long when positive, short when negative, and closed at zero. "
+			+ "Orders go in without asking, while you're within 64 blocks.");
 		minecraft.gui.setScreen(new ConfirmScreen(yes -> {
 			if (yes) {
 				autoTrade = true;
@@ -271,10 +281,11 @@ public class ChartSettingsScreen extends Screen {
 			graphics.textWithWordWrap(font, Component.literal(MODE_DESCRIPTIONS[index]), listLeft(), 70, textWidth, DIM);
 			if (isVotes()) {
 				graphics.text(font, "Units per vote", listLeft(), 130, TEXT);
+				graphics.text(font, "Minutes per round", listLeft(), 150, TEXT);
 				graphics.textWithWordWrap(font, Component.literal(autoTrade
-					? "Your position on the nearest master chart follows the vote: net votes x units per vote. Orders go in without asking."
-					: "Turn on auto-trade to have your position on the nearest master chart follow the vote."),
-					listLeft(), 172, textWidth, autoTrade ? WARNING : DIM);
+					? "At the end of each round, your position on the nearest master chart is set to the vote: net votes x units per vote. Orders go in without asking."
+					: "Turn on auto-trade to set your position on the nearest master chart to the vote at the end of each round."),
+					listLeft(), 192, textWidth, autoTrade ? WARNING : DIM);
 			}
 			super.extractRenderState(graphics, mouseX, mouseY, a);
 			return;
@@ -344,22 +355,29 @@ public class ChartSettingsScreen extends Screen {
 		return super.mouseScrolled(x, y, scrollX, scrollY);
 	}
 
-	private void save() {
-		int units;
+	private static int parse(String text) {
 		try {
-			units = Integer.parseInt(unitsPerVote.trim().replace(",", ""));
+			return Integer.parseInt(text.trim().replace(",", ""));
 		} catch (NumberFormatException e) {
-			units = 0;
+			return 0;
 		}
+	}
+
+	private void save() {
+		int units = parse(unitsPerVote);
+		int minutes = parse(roundMinutes);
 		if (isVotes() && (units < 1 || units > ChartScreenBlockEntity.MAX_UNITS_PER_VOTE)) {
 			problem = String.format("Units per vote must be 1 to %,d", ChartScreenBlockEntity.MAX_UNITS_PER_VOTE);
 			return;
 		}
-		if (!isVotes()) {
-			units = Math.clamp(units, 1, ChartScreenBlockEntity.MAX_UNITS_PER_VOTE);
+		if (isVotes() && (minutes < 1 || minutes > ChartScreenBlockEntity.MAX_ROUND_MINUTES)) {
+			problem = String.format("Minutes per round must be 1 to %,d", ChartScreenBlockEntity.MAX_ROUND_MINUTES);
+			return;
 		}
+		units = Math.clamp(units, 1, ChartScreenBlockEntity.MAX_UNITS_PER_VOTE);
+		minutes = Math.clamp(minutes, 1, ChartScreenBlockEntity.MAX_ROUND_MINUTES);
 		ChartScreenBlockEntity.Settings settings = new ChartScreenBlockEntity.Settings(
-			mode, instrument, granularity, showTrades, master, units, autoTrade && isVotes());
+			mode, instrument, granularity, showTrades, master, units, minutes, autoTrade && isVotes());
 		boolean ready = !isChart() || !instrument.isEmpty();
 		if (ready && settings.isValid()) {
 			ClientPlayNetworking.send(new SetChartPayload(pos, settings));

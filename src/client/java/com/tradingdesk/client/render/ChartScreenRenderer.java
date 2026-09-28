@@ -65,6 +65,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		state.noVotes = screen.noVotes();
 		state.unitsPerVote = screen.unitsPerVote();
 		state.autoTrade = screen.autoTrade();
+		state.ticksUntilNextRound = screen.ticksUntilNextRound(screen.getLevel().getGameTime());
 	}
 
 	@Override
@@ -86,7 +87,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		if (state.mode.equals("chart")) {
 			ChartPainter.paint(canvas, w, h, textScale, state.instrument, state.granularity, state.showTrades, state.master, null);
 		} else if (state.mode.equals("votes")) {
-			BoardPainter.votes(canvas, w, h, textScale, state.yesVotes, state.noVotes, state.unitsPerVote, state.autoTrade);
+			BoardPainter.votes(canvas, w, h, textScale, state.yesVotes, state.noVotes, state.unitsPerVote, state.autoTrade, state.ticksUntilNextRound);
 		} else {
 			BoardPainter.paint(canvas, w, h, textScale, state.mode);
 		}
@@ -113,6 +114,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		int noVotes;
 		int unitsPerVote = 1000;
 		boolean autoTrade;
+		long ticksUntilNextRound;
 		String instrument = "";
 		String granularity = "M15";
 		boolean showTrades;

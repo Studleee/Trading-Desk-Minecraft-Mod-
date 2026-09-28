@@ -25,8 +25,8 @@ import org.slf4j.Logger;
  * What a chart screen shows. The mode picks a market chart, one of the account boards (account summary, positions,
  * open trades, NAV history, watchlist, ticker), or a vote counter. A market chart also has an OANDA instrument name
  * like {@code EUR_USD}, a candle granularity, whether to draw the player's open trades on it, and whether it's a master
- * chart that buy and sell buttons trade. A vote counter has how many units each net vote is worth and whether its
- * owner's position on the nearest master chart follows the vote. Every screen in a group keeps the same settings; the
+ * chart that buy and sell buttons trade. A vote counter has how many units each net vote is worth, how long a voting
+ * round lasts, and whether its owner's position on the nearest master chart is set to the vote at the end of each round. Every screen in a group keeps the same settings; the
  * anchor's are the ones used, and only the anchor keeps the live vote count.
  */
 public class ChartScreenBlockEntity extends BlockEntity {
@@ -36,16 +36,38 @@ public class ChartScreenBlockEntity extends BlockEntity {
 	/** OANDA candle granularities a chart can use, shortest first. */
 	public static final List<String> GRANULARITIES = List.of("M1", "M5", "M15", "H1", "H4", "D");
 	public static final int MAX_UNITS_PER_VOTE = 1_000_000;
+	public static final int MAX_ROUND_MINUTES = 1440;
+	private static final int TICKS_PER_MINUTE = 1200;
 
 	/** Everything a player picks in a screen's settings. */
-	public record Settings(String mode, String instrument, String granularity, boolean showTrades, boolean master, int unitsPerVote, boolean autoTrade) {
-		public static final Settings DEFAULT = new Settings("chart", "", "M15", true, false, 1000, false);
+	public record Settings(
+		String mode, String instrument, String granularity, boolean showTrades, boolean master, int unitsPerVote, int roundMinutes, boolean autoTrade
+	) {
+		public static final Settings DEFAULT = new Settings("chart", "", "M15", true, false, 1000, 5, false);
 
-		/** Whether these are settings a screen can have: a known mode and granularity, a plausible instrument name, and a sensible vote size. */
+		/**
+		 * Whether these are settings a screen can have: a known mode and granularity, a plausible instrument name, and a
+		 * sensible vote size and round length.
+		 */
 		public boolean isValid() {
 			return MODES.contains(mode) && instrument.length() <= 32 && instrument.matches("[A-Z0-9_]*") && GRANULARITIES.contains(granularity)
-				&& unitsPerVote >= 1 && unitsPerVote <= MAX_UNITS_PER_VOTE;
+				&& unitsPerVote >= 1 && unitsPerVote <= MAX_UNITS_PER_VOTE && roundMinutes >= 1 && roundMinutes <= MAX_ROUND_MINUTES;
 		}
+
+		public long roundTicks() {
+			return (long) roundMinutes * TICKS_PER_MINUTE;
+		}
+	}
+
+	/** Which voting round it is at this game time. Rounds follow the world clock, so every player agrees on them. */
+	public long round(long gameTime) {
+		return gameTime / settings.roundTicks();
+	}
+
+	/** Ticks left in the current voting round. */
+	public long ticksUntilNextRound(long gameTime) {
+		long length = settings.roundTicks();
+		return length - gameTime % length;
 	}
 
 	private Settings settings = Settings.DEFAULT;
@@ -92,6 +114,10 @@ public class ChartScreenBlockEntity extends BlockEntity {
 
 	public int unitsPerVote() {
 		return settings.unitsPerVote();
+	}
+
+	public int roundMinutes() {
+		return settings.roundMinutes();
 	}
 
 	/** Whether this vote counter's owner's position follows the vote. */
@@ -153,6 +179,7 @@ public class ChartScreenBlockEntity extends BlockEntity {
 			input.getBooleanOr("show_trades", true),
 			input.getBooleanOr("master", false),
 			input.getIntOr("units_per_vote", 1000),
+			input.getIntOr("round_minutes", 5),
 			input.getBooleanOr("auto_trade", false));
 		settings = loaded.isValid() ? loaded : Settings.DEFAULT;
 		owner = null;
@@ -177,6 +204,7 @@ public class ChartScreenBlockEntity extends BlockEntity {
 		output.putBoolean("show_trades", settings.showTrades());
 		output.putBoolean("master", settings.master());
 		output.putInt("units_per_vote", settings.unitsPerVote());
+		output.putInt("round_minutes", settings.roundMinutes());
 		output.putBoolean("auto_trade", settings.autoTrade());
 		if (owner != null) {
 			output.putString("owner", owner.toString());

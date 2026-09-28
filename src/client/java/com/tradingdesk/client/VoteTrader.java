@@ -21,26 +21,26 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
- * Keeps the player's position on the nearest master chart at the vote: net votes times the counter's units per vote,
- * long when positive, short when negative, flat at zero. Only vote counters with auto-trade on, that this player turned
- * on, and that are near this player count. An order goes in only once the vote has held for {@link #STEADY_MS}, and
- * only once the open trades have been fetched again since the last order, so one change never trades twice.
+ * At the end of each voting round, sets the player's position on the nearest master chart to the vote: net votes times
+ * the counter's units per vote, long when positive, short when negative, flat at zero. Only vote counters with
+ * auto-trade on, that this player turned on, and that are near this player count. A round's order waits until the
+ * open trades have been fetched again since the last order, so it's always sized from the real position.
  */
 final class VoteTrader {
-	private static final long STEADY_MS = 3000;
-	private static final long RETRY_AFTER_FAILURE_MS = 30_000;
 	private static final int SEARCH_RANGE = 64;
 	private static final int INTERVAL_TICKS = 10;
 
 	private static final Map<BlockPos, Counter> counters = new HashMap<>();
 
 	private static final class Counter {
-		int net = Integer.MIN_VALUE;
-		long steadySince;
+		long roundTicks;
+		long round = -1;
+		/** A round has ended and its order hasn't gone in yet. */
+		boolean due;
+		/** The vote when that round ended. */
+		int dueNet;
 		boolean ordering;
 		long orderedAt;
-		long retryAt;
-		boolean warnedNoMaster;
 	}
 
 	private VoteTrader() {
@@ -55,41 +55,44 @@ final class VoteTrader {
 		if (level.getGameTime() % INTERVAL_TICKS != 0) {
 			return;
 		}
-		long now = System.currentTimeMillis();
+		long gameTime = level.getGameTime();
 		UUID me = minecraft.player.getUUID();
 		Set<BlockPos> seen = new HashSet<>();
 		for (ChartScreenBlockEntity screen : myCounters(level, minecraft.player.blockPosition(), me)) {
 			BlockPos pos = screen.getBlockPos();
 			seen.add(pos);
 			Counter counter = counters.computeIfAbsent(pos, p -> new Counter());
-			int net = screen.yesVotes() - screen.noVotes();
-			if (net != counter.net) {
-				counter.net = net;
-				counter.steadySince = now;
+			long roundTicks = screen.settings().roundTicks();
+			long round = screen.round(gameTime);
+			if (counter.round < 0 || counter.roundTicks != roundTicks) {
+				counter.roundTicks = roundTicks;
+				counter.round = round;
+			} else if (round != counter.round) {
+				counter.round = round;
+				counter.due = true;
+				counter.dueNet = screen.yesVotes() - screen.noVotes();
 			}
-			update(minecraft, level, screen, counter, now);
+			if (counter.due) {
+				trade(minecraft, level, screen, counter);
+			}
 		}
 		counters.keySet().retainAll(seen);
 	}
 
-	private static void update(Minecraft minecraft, ClientLevel level, ChartScreenBlockEntity screen, Counter counter, long now) {
+	private static void trade(Minecraft minecraft, ClientLevel level, ChartScreenBlockEntity screen, Counter counter) {
 		OandaData data = OandaData.get();
 		var trades = data.trades();
-		if (counter.ordering || now - counter.steadySince < STEADY_MS || now < counter.retryAt
-			|| data.status() != OandaData.Status.CONNECTED || data.tradesUpdated() <= counter.orderedAt) {
+		if (counter.ordering || data.status() != OandaData.Status.CONNECTED || data.tradesUpdated() <= counter.orderedAt) {
 			return;
 		}
+		counter.due = false;
 		ChartScreenBlockEntity master = TradeButtons.nearestMaster(level, screen.getBlockPos());
 		if (master == null) {
-			if (!counter.warnedNoMaster) {
-				counter.warnedNoMaster = true;
-				TradeButtons.tell(minecraft, "Vote counter: no master chart within " + TradeButtons.RANGE + " blocks to trade.", true);
-			}
+			TradeButtons.tell(minecraft, "Vote round over, but there's no master chart within " + TradeButtons.RANGE + " blocks to trade.", true);
 			return;
 		}
-		counter.warnedNoMaster = false;
 		String instrument = master.instrument();
-		long target = (long) counter.net * screen.unitsPerVote();
+		long target = (long) counter.dueNet * screen.unitsPerVote();
 		long current = 0;
 		for (Trade trade : trades) {
 			if (trade.instrument().equals(instrument)) {
@@ -97,20 +100,22 @@ final class VoteTrader {
 			}
 		}
 		long change = target - current;
+		String vote = String.format("Vote round over (%+d)", counter.dueNet).replace("+0", "0");
 		if (change == 0) {
+			TradeButtons.tell(minecraft, vote + ": position already " + describe(target) + " " + data.displayName(instrument), false);
 			return;
 		}
 		counter.ordering = true;
-		TradeButtons.tell(minecraft, String.format("Vote %+d: %s %,d %s", counter.net, change > 0 ? "buying" : "selling", Math.abs(change), data.displayName(instrument)), false);
+		TradeButtons.tell(minecraft, String.format("%s: %s %,d %s", vote, change > 0 ? "buying" : "selling", Math.abs(change), data.displayName(instrument)), false);
 		data.marketOrder(instrument, change, null, null).thenAccept(message -> minecraft.execute(() -> {
 			counter.ordering = false;
 			counter.orderedAt = System.currentTimeMillis();
-			boolean failed = OrderTicket.isFailure(message);
-			if (failed) {
-				counter.retryAt = counter.orderedAt + RETRY_AFTER_FAILURE_MS;
-			}
-			TradeButtons.tell(minecraft, "Vote counter: " + message, failed);
+			TradeButtons.tell(minecraft, "Vote round: " + message, OrderTicket.isFailure(message));
 		}));
+	}
+
+	private static String describe(long units) {
+		return units == 0 ? "flat" : String.format("%s %,d", units > 0 ? "long" : "short", Math.abs(units));
 	}
 
 	/** The anchors of vote counters near pos, in loaded chunks, with auto-trade turned on by this player. */
