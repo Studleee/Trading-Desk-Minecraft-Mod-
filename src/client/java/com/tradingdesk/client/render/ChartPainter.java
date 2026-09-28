@@ -174,6 +174,10 @@ final class ChartPainter {
 			markLevel(canvas, scale, trade.takeProfit(), "TP", TARGET, left, right, labelScale);
 		}
 
+		if (!trades.isEmpty()) {
+			drawPosition(canvas, data, instrument, trades, left, top, textScale);
+		}
+
 		// The current price.
 		float priceY = scale.y(current);
 		canvas.dashedLine(left, right, priceY, 0.3F, 1.5F, PRICE_LINE, 3);
@@ -182,6 +186,36 @@ final class ChartPainter {
 			canvas.rect(right + textScale, priceY - 5 * labelScale, w - pad * 0.5F, priceY + 5 * labelScale, moveColor, 4);
 			canvas.text(label, right + 2 * textScale, priceY - 4 * labelScale, labelScale, 0xFF000000, 5);
 		}
+	}
+
+	/**
+	 * A box in the chart's top-left corner summing up the player's position in this market: net size, average entry,
+	 * and total unrealized P/L across all its open trades.
+	 */
+	private static void drawPosition(Canvas canvas, OandaData data, String instrument, List<Trade> trades, float left, float top, float textScale) {
+		long net = 0;
+		long size = 0;
+		double weightedEntry = 0;
+		double pl = 0;
+		for (Trade trade : trades) {
+			net += trade.units();
+			size += Math.abs(trade.units());
+			weightedEntry += trade.entry() * Math.abs(trade.units());
+			pl += trade.unrealizedPl();
+		}
+		String side = net > 0 ? "LONG " : net < 0 ? "SHORT " : "FLAT ";
+		String position = side + String.format("%,d", Math.abs(net)) + " @ " + data.formatPrice(instrument, weightedEntry / Math.max(1, size));
+		var account = data.account();
+		String plText = String.format("%+,.2f", pl) + (account != null ? " " + account.currency() : "");
+		float scale = textScale * 0.85F;
+		float gap = 4 * scale;
+		float width = canvas.width(position, scale) + gap + canvas.width(plText, scale) + 4 * scale;
+		float height = 11 * scale;
+		canvas.rect(left + scale, top + scale, left + scale + width, top + scale + height, 0xE0161B22, 4);
+		canvas.rect(left + scale, top + scale, left + scale + 0.8F * scale, top + scale + height, pl >= 0 ? UP : DOWN, 5);
+		float textY = top + scale + 2 * scale;
+		canvas.text(position, left + 3 * scale, textY, scale, TEXT, 5);
+		canvas.text(plText, left + 3 * scale + canvas.width(position, scale) + gap, textY, scale, pl >= 0 ? UP : DOWN, 5);
 	}
 
 	/** A stop loss or take profit, if it's within the chart's price range. */
