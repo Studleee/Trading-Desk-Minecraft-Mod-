@@ -262,15 +262,81 @@ foreach ($r in $recipes) {
 "@
 }
 
+# ---- Buy and sell buttons: stone buttons in green and red, using vanilla's button shapes ----
+$buttons = @(
+	@('buy_button', '1a7f37', '2ea043', '56d364', 'minecraft:green_dye', 11),
+	@('sell_button', '9e1c1c', 'da3633', 'f85149', 'minecraft:red_dye', 12)
+)
+foreach ($b in $buttons) {
+	$id, $dark, $mid, $light, $dye, $seed = $b
+	Noise-Texture $dark $mid $light (Join-Path $tex "block\$id.png") $seed
+	foreach ($variant in @(@('', 'button'), @('_pressed', 'button_pressed'), @('_inventory', 'button_inventory'))) {
+		$suffix, $parent = $variant
+		Write-Json (Join-Path $assets "models\block\$id$suffix.json") "{ `"parent`": `"minecraft:block/$parent`", `"textures`": { `"texture`": `"tradingdesk:block/$id`" } }"
+	}
+	Write-Json (Join-Path $assets "items\$id.json") "{ `"model`": { `"type`": `"minecraft:model`", `"model`": `"tradingdesk:block/${id}_inventory`" } }"
+
+	# The same rotations as vanilla's stone button.
+	$variants = @()
+	foreach ($face in @('floor', 'wall', 'ceiling')) {
+		foreach ($facing in @('north', 'east', 'south', 'west')) {
+			$y = @{ 'north' = 0; 'east' = 90; 'south' = 180; 'west' = 270 }[$facing]
+			$x = 0; $uvlock = ''
+			if ($face -eq 'wall') { $x = 90; $uvlock = ', "uvlock": true' }
+			if ($face -eq 'ceiling') { $x = 180; $y = ($y + 180) % 360 }
+			foreach ($powered in @('false', 'true')) {
+				$model = if ($powered -eq 'true') { "tradingdesk:block/${id}_pressed" } else { "tradingdesk:block/$id" }
+				$variants += "`t`t`"face=$face,facing=$facing,powered=$powered`": { `"model`": `"$model`", `"x`": $x, `"y`": $y$uvlock }"
+			}
+		}
+	}
+	Write-Json (Join-Path $assets "blockstates\$id.json") ("{`n`t`"variants`": {`n" + ($variants -join ",`n") + "`n`t}`n}")
+
+	Write-Json (Join-Path $data "loot_table\blocks\$id.json") @"
+{
+	"type": "minecraft:block",
+	"pools": [
+		{
+			"rolls": 1,
+			"conditions": [ { "condition": "minecraft:survives_explosion" } ],
+			"entries": [ { "type": "minecraft:item", "name": "tradingdesk:$id" } ]
+		}
+	]
+}
+"@
+	# A stone button and a dye.
+	Write-Json (Join-Path $data "recipe\$id.json") @"
+{
+	"type": "minecraft:crafting_shapeless",
+	"category": "redstone",
+	"ingredients": [ "minecraft:stone_button", "$dye" ],
+	"result": { "id": "tradingdesk:$id", "count": 1 }
+}
+"@
+	Write-Json (Join-Path $data "advancement\recipes\redstone\$id.json") @"
+{
+	"parent": "minecraft:recipes/root",
+	"criteria": {
+		"has_button": { "conditions": { "items": [ { "items": "minecraft:stone_button" } ] }, "trigger": "minecraft:inventory_changed" },
+		"has_the_recipe": { "conditions": { "recipes": "tradingdesk:$id" }, "trigger": "minecraft:recipe_unlocked" }
+	},
+	"requirements": [ [ "has_the_recipe", "has_button" ] ],
+	"rewards": { "recipes": [ "tradingdesk:$id" ] }
+}
+"@
+}
+
 # ---- Tool tags and names ----
 Write-Json (Join-Path $root 'data\minecraft\tags\block\mineable\axe.json') '{ "values": [ "tradingdesk:trading_desk" ] }'
-Write-Json (Join-Path $root 'data\minecraft\tags\block\mineable\pickaxe.json') '{ "values": [ "tradingdesk:chart_screen" ] }'
+Write-Json (Join-Path $root 'data\minecraft\tags\block\mineable\pickaxe.json') '{ "values": [ "tradingdesk:chart_screen", "tradingdesk:buy_button", "tradingdesk:sell_button" ] }'
 Write-Json (Join-Path $assets 'lang\en_us.json') @'
 {
 	"creativeTab.tradingdesk": "Trading Desk",
 	"block.tradingdesk.trading_desk": "Trading Desk",
-	"block.tradingdesk.chart_screen": "Chart Screen"
+	"block.tradingdesk.chart_screen": "Chart Screen",
+	"block.tradingdesk.buy_button": "Buy Button",
+	"block.tradingdesk.sell_button": "Sell Button"
 }
 '@
 
-Write-Host "Generated the trading desk, chart screen, and icon."
+Write-Host "Generated the trading desk, chart screen, buy and sell buttons, and icon."

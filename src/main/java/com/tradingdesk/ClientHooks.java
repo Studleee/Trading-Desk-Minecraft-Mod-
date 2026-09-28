@@ -1,5 +1,6 @@
 package com.tradingdesk;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import net.minecraft.core.BlockPos;
@@ -12,6 +13,9 @@ public final class ClientHooks {
 	public static Runnable openDesk = () -> {
 	};
 	public static Consumer<BlockPos> openChartSettings = pos -> {
+	};
+	/** A buy (true) or sell (false) button was pressed at pos. */
+	public static BiConsumer<BlockPos, Boolean> tradeButton = (pos, buy) -> {
 	};
 
 	private ClientHooks() {

@@ -19,6 +19,7 @@ public class TradingDeskClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.CHART_SCREEN, ChartScreenRenderer::new);
 		ClientHooks.openDesk = () -> Minecraft.getInstance().gui.setScreen(new DeskScreen());
 		ClientHooks.openChartSettings = pos -> Minecraft.getInstance().gui.setScreen(new ChartSettingsScreen(pos));
+		ClientHooks.tradeButton = TradeButtons::pressed;
 		OandaData.get();
 	}
 }

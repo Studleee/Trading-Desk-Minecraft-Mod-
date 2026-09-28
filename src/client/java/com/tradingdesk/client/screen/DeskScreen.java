@@ -40,9 +40,6 @@ public class DeskScreen extends Screen {
 	/** The market picked in the watchlist; the desk's monitor charts it too. */
 	private static @Nullable String selected;
 
-	private String unitsText = "";
-	private String stopText = "";
-	private String targetText = "";
 	private String addText = "";
 	private String result = "";
 	private boolean resultBad;
@@ -54,7 +51,6 @@ public class DeskScreen extends Screen {
 
 	public DeskScreen() {
 		super(Component.literal("OANDA Trading Desk"));
-		unitsText = Long.toString(OandaData.get().config().defaultUnits);
 	}
 
 	public static String selectedInstrument() {
@@ -118,9 +114,9 @@ public class DeskScreen extends Screen {
 
 		int x = ticketLeft() + 70;
 		int boxWidth = Math.min(90, width - MARGIN - x - 4);
-		addRenderableWidget(box(x, mainTop() + 30, boxWidth, unitsText, "Units", value -> unitsText = value));
-		addRenderableWidget(box(x, mainTop() + 48, boxWidth, stopText, "optional", value -> stopText = value));
-		addRenderableWidget(box(x, mainTop() + 66, boxWidth, targetText, "optional", value -> targetText = value));
+		addRenderableWidget(box(x, mainTop() + 30, boxWidth, OrderTicket.units(), "Units", value -> OrderTicket.units = value));
+		addRenderableWidget(box(x, mainTop() + 48, boxWidth, OrderTicket.stop, "optional", value -> OrderTicket.stop = value));
+		addRenderableWidget(box(x, mainTop() + 66, boxWidth, OrderTicket.target, "optional", value -> OrderTicket.target = value));
 
 		int ticketWidth = width - MARGIN - ticketLeft() - 8;
 		int half = ticketWidth / 2 - 2;
@@ -403,44 +399,10 @@ public class DeskScreen extends Screen {
 	// ---- Orders ----
 
 	private void confirmOrder(boolean buy) {
-		OandaData data = OandaData.get();
-		String instrument = selectedInstrument();
-		long units;
-		try {
-			units = Long.parseLong(unitsText.trim().replace(",", ""));
-		} catch (NumberFormatException e) {
-			units = 0;
+		String problem = OrderTicket.confirm(minecraft, selectedInstrument(), buy, this, message -> showResult(message, OrderTicket.isFailure(message)));
+		if (problem != null) {
+			showResult(problem, true);
 		}
-		if (units <= 0) {
-			showResult("Units must be a whole number above 0", true);
-			return;
-		}
-		String stop;
-		String target;
-		try {
-			stop = priceOrNull(data, instrument, stopText);
-			target = priceOrNull(data, instrument, targetText);
-		} catch (NumberFormatException e) {
-			showResult("Stop loss and take profit must be prices, or blank", true);
-			return;
-		}
-		Price price = data.price(instrument);
-		String at = price == null ? "" : " (about " + data.formatPrice(instrument, buy ? price.ask() : price.bid()) + ")";
-		boolean live = data.config().live();
-		long signed = buy ? units : -units;
-		String message = (buy ? "BUY " : "SELL ") + String.format("%,d", units) + " " + data.displayName(instrument) + " at market" + at
-			+ "\nStop loss: " + (stop == null ? "none" : stop) + "    Take profit: " + (target == null ? "none" : target)
-			+ "\nAccount " + data.accountId() + (live ? " (LIVE)" : " (practice)");
-		Component heading = live
-			? Component.literal("LIVE ACCOUNT: place this order with real money?").withColor(LIVE)
-			: Component.literal("Place this order on your practice account?");
-		minecraft.gui.setScreen(new ConfirmScreen(yes -> {
-			minecraft.gui.setScreen(this);
-			if (yes) {
-				showResult("Sending order...", false);
-				data.marketOrder(instrument, signed, stop, target).thenAccept(this::showResultLater);
-			}
-		}, heading, Component.literal(message)));
 	}
 
 	private void confirmClose(Trade trade) {
@@ -460,16 +422,8 @@ public class DeskScreen extends Screen {
 		}, heading, Component.literal(message)));
 	}
 
-	private static @Nullable String priceOrNull(OandaData data, String instrument, String text) {
-		String trimmed = text.trim();
-		if (trimmed.isEmpty()) {
-			return null;
-		}
-		return data.formatPrice(instrument, Double.parseDouble(trimmed));
-	}
-
 	private void showResultLater(String message) {
-		minecraft.execute(() -> showResult(message, message.startsWith("Failed") || message.startsWith("Order cancelled") || message.startsWith("Not connected")));
+		minecraft.execute(() -> showResult(message, OrderTicket.isFailure(message)));
 	}
 
 	private void showResult(String message, boolean bad) {

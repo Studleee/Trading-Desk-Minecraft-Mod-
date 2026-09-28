@@ -75,6 +75,7 @@ public class TradingDeskRenderer implements BlockEntityRenderer<TradingDeskBlock
 			DeskScreen.selectedInstrument(),
 			"M15",
 			true,
+			false,
 			header);
 		poseStack.popPose();
 	}

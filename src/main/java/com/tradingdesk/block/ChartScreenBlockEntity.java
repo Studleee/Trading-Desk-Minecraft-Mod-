@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 
 /**
  * What a chart screen shows: an OANDA instrument name like {@code EUR_USD}, a candle granularity, and whether to draw
- * the player's open trades on it. Every screen in a chart keeps the same settings; the anchor's are the ones used.
+ * the player's open trades on it, and whether it's a master chart that buy and sell buttons trade. Every screen in a chart keeps the same settings; the anchor's are the ones used.
  */
 public class ChartScreenBlockEntity extends BlockEntity {
 	private static final Logger LOGGER = LogUtils.getLogger();
@@ -30,6 +30,7 @@ public class ChartScreenBlockEntity extends BlockEntity {
 	private String instrument = "";
 	private String granularity = "M15";
 	private boolean showTrades = true;
+	private boolean master;
 
 	public ChartScreenBlockEntity(BlockPos pos, BlockState state) {
 		super(ModBlockEntities.CHART_SCREEN, pos, state);
@@ -47,6 +48,11 @@ public class ChartScreenBlockEntity extends BlockEntity {
 		return showTrades;
 	}
 
+	/** Whether buy and sell buttons nearby trade this chart's market. */
+	public boolean master() {
+		return master;
+	}
+
 	public boolean isSetUp() {
 		return !instrument.isEmpty();
 	}
@@ -56,13 +62,14 @@ public class ChartScreenBlockEntity extends BlockEntity {
 		return instrument.length() <= 32 && instrument.matches("[A-Z0-9_]*") && GRANULARITIES.contains(granularity);
 	}
 
-	public void apply(String instrument, String granularity, boolean showTrades) {
+	public void apply(String instrument, String granularity, boolean showTrades, boolean master) {
 		if (!isValid(instrument, granularity)) {
 			return;
 		}
 		this.instrument = instrument;
 		this.granularity = granularity;
 		this.showTrades = showTrades;
+		this.master = master;
 		setChanged();
 		if (level != null) {
 			level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -79,6 +86,7 @@ public class ChartScreenBlockEntity extends BlockEntity {
 			granularity = loadedGranularity;
 		}
 		showTrades = input.getBooleanOr("show_trades", true);
+		master = input.getBooleanOr("master", false);
 	}
 
 	@Override
@@ -87,6 +95,7 @@ public class ChartScreenBlockEntity extends BlockEntity {
 		output.putString("instrument", instrument);
 		output.putString("granularity", granularity);
 		output.putBoolean("show_trades", showTrades);
+		output.putBoolean("master", master);
 	}
 
 	@Override

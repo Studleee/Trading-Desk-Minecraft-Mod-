@@ -59,6 +59,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		state.instrument = screen.instrument();
 		state.granularity = screen.granularity();
 		state.showTrades = screen.showTrades();
+		state.master = screen.master();
 	}
 
 	@Override
@@ -82,6 +83,7 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 			state.instrument,
 			state.granularity,
 			state.showTrades,
+			state.master,
 			null);
 		poseStack.popPose();
 	}
@@ -104,5 +106,6 @@ public class ChartScreenRenderer implements BlockEntityRenderer<ChartScreenBlock
 		String instrument = "";
 		String granularity = "M15";
 		boolean showTrades;
+		boolean master;
 	}
 }

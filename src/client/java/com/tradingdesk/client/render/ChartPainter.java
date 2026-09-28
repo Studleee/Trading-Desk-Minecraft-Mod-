@@ -23,6 +23,7 @@ final class ChartPainter {
 	static final int UP = 0xFF26A69A;
 	static final int DOWN = 0xFFEF5350;
 	private static final int PRICE_LINE = 0xFF6E7681;
+	private static final int MASTER = 0xFFD29922;
 	private static final int BUY = 0xFF42A5F5;
 	private static final int SELL = 0xFFFFA726;
 	private static final int STOP = 0xFFEF5350;
@@ -52,7 +53,8 @@ final class ChartPainter {
 	 * the right side only appear when there's room.
 	 */
 	static void paint(
-		Canvas canvas, float w, float h, float textScale, String instrument, String granularity, boolean showTrades, @Nullable Header header
+		Canvas canvas, float w, float h, float textScale, String instrument, String granularity, boolean showTrades, boolean master,
+		@Nullable Header header
 	) {
 		OandaData data = OandaData.get();
 		canvas.rect(0, 0, w, h, BACKGROUND, 0);
@@ -89,7 +91,11 @@ final class ChartPainter {
 			canvas.text(header.left(), pad, pad, textScale, TEXT, 3);
 			canvas.rightText(header.right(), w - pad, pad, textScale, header.rightColor(), 3);
 		} else {
-			canvas.text(data.displayName(instrument) + "  " + granularityLabel(granularity), pad, pad, textScale, TEXT, 3);
+			String title = data.displayName(instrument) + "  " + granularityLabel(granularity);
+			canvas.text(title, pad, pad, textScale, TEXT, 3);
+			if (master) {
+				canvas.text("MASTER", pad + canvas.width(title + "  ", textScale), pad, textScale * 0.8F, MASTER, 3);
+			}
 		}
 
 		if (loaded == null || loaded.isEmpty()) {

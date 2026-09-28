@@ -1,0 +1,6 @@
+{
+	"type": "minecraft:crafting_shapeless",
+	"category": "redstone",
+	"ingredients": [ "minecraft:stone_button", "minecraft:red_dye" ],
+	"result": { "id": "tradingdesk:sell_button", "count": 1 }
+}

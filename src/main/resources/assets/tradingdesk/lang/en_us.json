@@ -1,5 +1,7 @@
 {
 	"creativeTab.tradingdesk": "Trading Desk",
 	"block.tradingdesk.trading_desk": "Trading Desk",
-	"block.tradingdesk.chart_screen": "Chart Screen"
+	"block.tradingdesk.chart_screen": "Chart Screen",
+	"block.tradingdesk.buy_button": "Buy Button",
+	"block.tradingdesk.sell_button": "Sell Button"
 }

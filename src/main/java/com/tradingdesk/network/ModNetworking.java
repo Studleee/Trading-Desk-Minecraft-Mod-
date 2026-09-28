@@ -33,7 +33,7 @@ public final class ModNetworking {
 		}
 		for (BlockPos member : ChartGroup.of(level, pos, state.getValue(ChartScreenBlock.FACING)).members()) {
 			if (level.getBlockEntity(member) instanceof ChartScreenBlockEntity screen) {
-				screen.apply(payload.instrument(), payload.granularity(), payload.showTrades());
+				screen.apply(payload.instrument(), payload.granularity(), payload.showTrades(), payload.master());
 			}
 		}
 	}

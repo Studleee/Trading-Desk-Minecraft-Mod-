@@ -39,10 +39,12 @@ public class ChartSettingsScreen extends Screen {
 	private String instrument;
 	private String granularity;
 	private boolean showTrades;
+	private boolean master;
 	private String search = "";
 	private int scroll;
 	private final List<Button> granularityButtons = new ArrayList<>();
 	private Button tradesButton;
+	private Button masterButton;
 
 	public ChartSettingsScreen(BlockPos pos) {
 		super(Component.literal("Chart settings"));
@@ -51,6 +53,7 @@ public class ChartSettingsScreen extends Screen {
 		String currentInstrument = "";
 		String currentGranularity = "M15";
 		boolean currentShowTrades = true;
+		boolean currentMaster = false;
 		var level = net.minecraft.client.Minecraft.getInstance().level;
 		if (level != null) {
 			BlockState state = level.getBlockState(pos);
@@ -61,6 +64,7 @@ public class ChartSettingsScreen extends Screen {
 					currentInstrument = anchor.instrument();
 					currentGranularity = anchor.granularity();
 					currentShowTrades = anchor.showTrades();
+					currentMaster = anchor.master();
 				}
 			}
 		}
@@ -68,6 +72,7 @@ public class ChartSettingsScreen extends Screen {
 		this.instrument = currentInstrument;
 		this.granularity = currentGranularity;
 		this.showTrades = currentShowTrades;
+		this.master = currentMaster;
 	}
 
 	private int listLeft() {
@@ -113,6 +118,10 @@ public class ChartSettingsScreen extends Screen {
 			showTrades = !showTrades;
 			updateButtons();
 		}).bounds(x, 106, 130, 18).build());
+		masterButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
+			master = !master;
+			updateButtons();
+		}).bounds(x, 128, 130, 18).build());
 
 		addRenderableWidget(Button.builder(Component.literal("Done"), b -> save()).bounds(x, height - 50, 64, 20).build());
 		addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> onClose()).bounds(x + 68, height - 50, 64, 20).build());
@@ -124,6 +133,7 @@ public class ChartSettingsScreen extends Screen {
 			granularityButtons.get(i).active = !ChartScreenBlockEntity.GRANULARITIES.get(i).equals(granularity);
 		}
 		tradesButton.setMessage(Component.literal("Show my trades: " + (showTrades ? "On" : "Off")));
+		masterButton.setMessage(Component.literal("Master chart: " + (master ? "On" : "Off")));
 	}
 
 	/** Markets matching the search: from OANDA's list when connected, otherwise the watchlist and what's typed. */
@@ -179,8 +189,10 @@ public class ChartSettingsScreen extends Screen {
 			graphics.text(font, "No markets match", x0 + 4, listTop() + 1, DIM);
 		}
 		if (data.status() != OandaData.Status.CONNECTED && !data.message().isEmpty()) {
-			graphics.textWithWordWrap(font, Component.literal(data.message()), listRight() + 10, 130, width - listRight() - 20, DIM);
+			graphics.textWithWordWrap(font, Component.literal(data.message()), listRight() + 10, 176, width - listRight() - 20, DIM);
 		}
+		graphics.textWithWordWrap(font, Component.literal("Buy and sell buttons trade the nearest master chart's market."),
+			listRight() + 10, 150, width - listRight() - 20, DIM);
 
 		graphics.text(font, "Timeframe", listRight() + 10, 40, TEXT);
 		super.extractRenderState(graphics, mouseX, mouseY, a);
@@ -216,7 +228,7 @@ public class ChartSettingsScreen extends Screen {
 
 	private void save() {
 		if (!instrument.isEmpty() && ChartScreenBlockEntity.isValid(instrument, granularity)) {
-			ClientPlayNetworking.send(new SetChartPayload(pos, instrument, granularity, showTrades));
+			ClientPlayNetworking.send(new SetChartPayload(pos, instrument, granularity, showTrades, master));
 		}
 		onClose();
 	}
