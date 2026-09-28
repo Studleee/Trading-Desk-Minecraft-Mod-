@@ -36,14 +36,15 @@ public class ChartSettingsScreen extends Screen {
 	private static final int DIM = 0xFF8B949E;
 	private static final int HIGHLIGHT = 0xFF1F6FEB;
 	private static final String[] GRANULARITY_LABELS = {"1m", "5m", "15m", "1h", "4h", "1D"};
-	private static final String[] MODE_LABELS = {"Chart", "Account", "Positions", "Trades", "NAV", "Watchlist"};
+	private static final String[] MODE_LABELS = {"Chart", "Account", "Positions", "Trades", "NAV", "Watchlist", "Ticker"};
 	private static final String[] MODE_DESCRIPTIONS = {
 		"",
 		"Your NAV in big numbers, with balance, unrealized and realized P/L, margin, margin level, and how many trades are open.",
 		"Your open trades added up per market: net side and size, average price, current price, and P/L, with a total.",
 		"Every open trade: market, side, units, entry, stop loss, take profit, and P/L, with a total.",
 		"A graph of your NAV over the last day. OANDA doesn't keep NAV history, so it's recorded every 30 seconds while the game runs and something shows your account.",
-		"Live bid, ask, and spread for your watchlist. Add markets at the desk."
+		"Live bid, ask, and spread for your watchlist. Add markets at the desk.",
+		"Your watchlist scrolling past in one line: price and change since the day's open. Best on a long row of screens one high, like above a doorway."
 	};
 
 	private final BlockPos pos;

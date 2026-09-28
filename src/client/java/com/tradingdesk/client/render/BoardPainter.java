@@ -9,6 +9,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.tradingdesk.client.oanda.OandaData;
 import com.tradingdesk.client.oanda.OandaModels.Account;
+import com.tradingdesk.client.oanda.OandaModels.Candle;
 import com.tradingdesk.client.oanda.OandaModels.NavPoint;
 import com.tradingdesk.client.oanda.OandaModels.Price;
 import com.tradingdesk.client.oanda.OandaModels.Trade;
@@ -48,6 +49,7 @@ final class BoardPainter {
 			case "trades" -> "Open trades";
 			case "nav" -> "NAV";
 			case "watchlist" -> "Watchlist";
+			case "ticker" -> "Ticker";
 			default -> "Chart";
 		};
 	}
@@ -58,6 +60,10 @@ final class BoardPainter {
 		if (data.status() != OandaData.Status.CONNECTED) {
 			String message = data.message().isEmpty() ? "Connecting to OANDA..." : data.message();
 			canvas.centeredLines(message, 0, 0, w, h, textScale * 0.8F, data.status() == OandaData.Status.ERROR ? DOWN : DIM, 3);
+			return;
+		}
+		if (mode.equals("ticker")) {
+			ticker(canvas, data, w, h);
 			return;
 		}
 		float pad = 2.0F * textScale;
@@ -200,6 +206,82 @@ final class BoardPainter {
 		}
 		table(canvas, pad, top, w - pad, h - pad, textScale,
 			new String[] {"Market", "Bid", "Ask", "Spread"}, new boolean[] {false, true, true, true}, rows, null);
+	}
+
+	/**
+	 * The watchlist scrolling right to left in one line as tall as the screen allows: each market's name, live price,
+	 * and change since the day's open. Text is clipped a character at a time at the screen's edges.
+	 */
+	private static void ticker(Canvas canvas, OandaData data, float w, float h) {
+		List<String> watchlist = data.config().watchlist;
+		float scale = Math.min(h * 0.55F / 9.0F, 4.0F);
+		float y = h / 2 - 4 * scale;
+		if (watchlist.isEmpty()) {
+			clippedText(canvas, "Add markets to the watchlist at the desk", 2, y, scale, DIM, w);
+			return;
+		}
+		List<Cell[]> items = new ArrayList<>();
+		float total = 0;
+		float gap = canvas.width("   ", scale);
+		for (String instrument : watchlist) {
+			Price price = data.price(instrument);
+			List<Candle> daily = data.candles(instrument, "D");
+			Cell name = new Cell(data.displayName(instrument) + " ", TEXT);
+			Cell last = price == null ? new Cell("-", DIM) : new Cell(data.formatPrice(instrument, price.mid()) + " ", TEXT);
+			Cell change = new Cell("", DIM);
+			if (price != null && daily != null && !daily.isEmpty() && daily.getLast().open() != 0) {
+				double open = daily.getLast().open();
+				double percent = (price.mid() - open) / open * 100;
+				change = new Cell((percent >= 0 ? "\u25B2" : "\u25BC") + String.format("%.2f%%", Math.abs(percent)), percent >= 0 ? UP : DOWN);
+			}
+			Cell[] item = {name, last, change};
+			items.add(item);
+			for (Cell part : item) {
+				total += canvas.width(part.text(), scale);
+			}
+			total += gap;
+		}
+		if (total <= 0) {
+			return;
+		}
+		float speed = 12.0F * scale;
+		float offset = (float) ((System.nanoTime() / 1.0E9 * speed) % total);
+		float x = -offset;
+		while (x < w) {
+			for (Cell[] item : items) {
+				for (Cell part : item) {
+					clippedText(canvas, part.text(), x, y, scale, part.color(), w);
+					x += canvas.width(part.text(), scale);
+				}
+				float divider = x + gap / 2;
+				if (divider > 0.5F && divider < w - 0.5F) {
+					canvas.rect(divider - 0.3F * scale, y, divider + 0.3F * scale, y + 7 * scale, RULE, 1);
+				}
+				x += gap;
+				if (x >= w) {
+					break;
+				}
+			}
+		}
+	}
+
+	/** Text starting at x, leaving out any character that isn't wholly between 0 and {@code right}. */
+	private static void clippedText(Canvas canvas, String text, float x, float y, float scale, int color, float right) {
+		if (x >= 0 && x + canvas.width(text, scale) <= right) {
+			canvas.text(text, x, y, scale, color, 3);
+			return;
+		}
+		float cursor = x;
+		for (int i = 0; i < text.length(); ) {
+			int end = text.offsetByCodePoints(i, 1);
+			String glyph = text.substring(i, end);
+			float glyphWidth = canvas.width(glyph, scale);
+			if (cursor >= 0 && cursor + glyphWidth <= right) {
+				canvas.text(glyph, cursor, y, scale, color, 3);
+			}
+			cursor += glyphWidth;
+			i = end;
+		}
 	}
 
 	/**

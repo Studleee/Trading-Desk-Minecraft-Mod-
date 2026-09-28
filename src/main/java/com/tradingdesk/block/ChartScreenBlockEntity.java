@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 public class ChartScreenBlockEntity extends BlockEntity {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	/** What a screen can show. */
-	public static final List<String> MODES = List.of("chart", "account", "positions", "trades", "nav", "watchlist");
+	public static final List<String> MODES = List.of("chart", "account", "positions", "trades", "nav", "watchlist", "ticker");
 	/** OANDA candle granularities a chart can use, shortest first. */
 	public static final List<String> GRANULARITIES = List.of("M1", "M5", "M15", "H1", "H4", "D");
 
