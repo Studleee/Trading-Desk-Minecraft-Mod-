@@ -1,0 +1,7 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"category": "misc",
+	"pattern": [ "RGR", "PPP", "I I" ],
+	"key": { "R": "minecraft:redstone", "G": "minecraft:glass_pane", "P": "minecraft:dark_oak_planks", "I": "minecraft:iron_ingot" },
+	"result": { "id": "tradingdesk:trading_desk", "count": 1 }
+}

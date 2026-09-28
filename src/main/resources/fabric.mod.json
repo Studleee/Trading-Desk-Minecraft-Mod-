@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "tradingdesk",
+	"version": "${version}",
+	"name": "Trading Desk",
+	"description": "A trading desk and wall chart screens connected to your OANDA account: live prices, candlestick charts, account balance, market orders, and open trades.",
+	"authors": [
+		"Jacob"
+	],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/tradingdesk/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.tradingdesk.TradingDesk"
+		],
+		"client": [
+			"com.tradingdesk.client.TradingDeskClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

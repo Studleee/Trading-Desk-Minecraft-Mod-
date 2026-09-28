@@ -1,0 +1,39 @@
+{
+	"parent": "minecraft:block/block",
+	"textures": {
+		"particle": "tradingdesk:block/desk_top",
+		"top": "tradingdesk:block/desk_top",
+		"metal": "tradingdesk:block/desk_metal",
+		"monitor": "tradingdesk:block/monitor",
+		"screen": "tradingdesk:block/monitor_screen",
+		"keyboard": "tradingdesk:block/keyboard"
+	},
+	"elements": [
+		{ "from": [0, 12, 0], "to": [16, 14, 16], "faces": {
+			"up": { "texture": "#top" }, "down": { "texture": "#top" },
+			"north": { "texture": "#top" }, "south": { "texture": "#top" }, "east": { "texture": "#top" }, "west": { "texture": "#top" } } },
+		{ "from": [1, 0, 1], "to": [3, 12, 3], "faces": {
+			"north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" }, "down": { "texture": "#metal" } } },
+		{ "from": [13, 0, 1], "to": [15, 12, 3], "faces": {
+			"north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" }, "down": { "texture": "#metal" } } },
+		{ "from": [1, 0, 13], "to": [3, 12, 15], "faces": {
+			"north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" }, "down": { "texture": "#metal" } } },
+		{ "from": [13, 0, 13], "to": [15, 12, 15], "faces": {
+			"north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" }, "down": { "texture": "#metal" } } },
+		{ "from": [5, 14, 11], "to": [11, 14.5, 14], "faces": {
+			"up": { "texture": "#metal" }, "north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" } } },
+		{ "from": [7, 14.5, 12], "to": [9, 18, 13], "faces": {
+			"north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" } } },
+		{ "from": [1, 15, 11], "to": [15, 24, 12], "faces": {
+			"north": { "uv": [0, 0, 16, 16], "texture": "#screen" },
+			"south": { "uv": [0, 0, 16, 16], "texture": "#monitor" },
+			"east": { "uv": [0, 0, 1, 9], "texture": "#monitor" },
+			"west": { "uv": [0, 0, 1, 9], "texture": "#monitor" },
+			"up": { "uv": [0, 0, 14, 1], "texture": "#monitor" },
+			"down": { "uv": [0, 0, 14, 1], "texture": "#monitor" } } },
+		{ "from": [3, 14, 2], "to": [12, 14.5, 5.5], "faces": {
+			"up": { "texture": "#keyboard" }, "north": { "texture": "#metal" }, "south": { "texture": "#metal" }, "east": { "texture": "#metal" }, "west": { "texture": "#metal" } } },
+		{ "from": [13, 14, 3], "to": [14.5, 14.75, 5], "faces": {
+			"up": { "texture": "#monitor" }, "north": { "texture": "#monitor" }, "south": { "texture": "#monitor" }, "east": { "texture": "#monitor" }, "west": { "texture": "#monitor" } } }
+	]
+}

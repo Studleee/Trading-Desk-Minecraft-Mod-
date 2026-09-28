@@ -1,0 +1,7 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"category": "misc",
+	"pattern": [ "NGN", "GRG", "NGN" ],
+	"key": { "N": "minecraft:iron_nugget", "G": "minecraft:glass_pane", "R": "minecraft:redstone" },
+	"result": { "id": "tradingdesk:chart_screen", "count": 2 }
+}

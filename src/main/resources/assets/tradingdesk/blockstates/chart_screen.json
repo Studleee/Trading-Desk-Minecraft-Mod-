@@ -1,0 +1,8 @@
+{
+	"variants": {
+		"facing=north": { "model": "tradingdesk:block/chart_screen" },
+		"facing=east": { "model": "tradingdesk:block/chart_screen", "y": 90 },
+		"facing=south": { "model": "tradingdesk:block/chart_screen", "y": 180 },
+		"facing=west": { "model": "tradingdesk:block/chart_screen", "y": 270 }
+	}
+}
